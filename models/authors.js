@@ -7,4 +7,4 @@ const authorsSchema = mongoose.Schema({
     }
 })
 
-module.exports = mongoose.model('Authors', authorsSchema)
+module.exports = mongoose.model('Authors', authorsSchema)                   

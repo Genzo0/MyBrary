@@ -42,7 +42,7 @@ router.get('/', async (req, res) => {
 
 //new book Route
 router.get('/new', async (req, res) => {
-    renderNewPage(res, new Book(), 'new')
+    renderNewPage(res, new Book())
 })
 
 //Create book route

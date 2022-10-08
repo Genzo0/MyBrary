@@ -48,7 +48,7 @@ router.post('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const author = await Authors.findById(req.params.id)
-        const books = await Books.find({author:author.id}).limit(6).exec()
+        const books = await Books.find({author:author._id}).limit(6).exec()
         res.render('authors/show', {
             author,
             booksByAuthor : books
@@ -71,7 +71,6 @@ router.get('/:id/edit', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
     let author
-    console.log(req.params.id)
     try{
         author = await Authors.findById(req.params.id)
         author.name = req.body.name
@@ -79,7 +78,6 @@ router.put('/:id', async (req, res) => {
         res.redirect(`/authors/${author.id}`)
     } catch {
         if(author == null){
-            console.log(author)
             res.redirect('/')
         } else {
             res.render('authors/edit', {
@@ -94,7 +92,6 @@ router.delete('/:id' , async(req,res) => {
     let response
     try{
         response = await Authors.deleteOne({_id:req.params.id})
-        console.log(response)
         res.redirect('/authors')
     } catch {
         if(response == null){

@@ -6,6 +6,7 @@ const router = express.Router()
 const Book = require('../models/book')
 const imageMimeTypes = ['image/jpeg', 'image/png', 'image/gif']
 const Authors = require('../models/authors')
+const { findById } = require('../models/book')
 // const upload = multer ({
 //     dest: uploadPath,
 //     fileFilter: (req, file, callback) => {
@@ -36,9 +37,12 @@ router.get('/', async (req, res) => {
     }
 })
 
+
+
+
 //new book Route
 router.get('/new', async (req, res) => {
-    renderNewPage(res, new Book())
+    renderNewPage(res, new Book(), 'new')
 })
 
 //Create book route
@@ -60,7 +64,87 @@ router.post('/', async (req, res) => {
     }
 })
 
+// edit book
+router.get('/:id/edit', async (req, res) => {
+    try {
+        const book = await Book.findById(req.params.id)
+        renderEditPage(res, book)
+    } catch (e){
+        console.log(e)
+        res.redirect('/books')
+    }
+})
+
+// show book route
+
+router.get('/:id', async (req,res) => {
+    try{
+        const book = await Book.findById(req.params.id)
+                           .populate('author')
+                           .exec()
+        res.render('books/show', {
+            book
+        })
+    } catch (e){
+        console.log(e)
+    }
+
+})
+
+//update book
+router.put('/:id', async (req, res) => {
+    let book
+    try {
+        book = await Book.findById(req.params.id)
+        book.title = req.body.title
+        book.author = req.body.author
+        book.publishDate = new Date(req.body.publishDate)
+        book.pageCount = req.body.pageCount
+        book.description = req.body.description
+        if(req.body.cover){
+            saveCover(book, req.body.cover)
+        }
+        await book.save()
+        res.redirect(`/books/${book._id}`)
+    } catch (e) {
+        console.log(e)
+        if(book){
+            renderEditPage(res, book, true)
+        } else {
+            res.redirect('/')
+        }
+    }
+})
+
+//delete book 
+router.delete('/:id', async (req, res) => {
+    let response
+    const book = await Book.findById(req.params.id)
+    try {
+        response = await Book.deleteOne({_id : req.params.id})
+        res.redirect('/books')
+    } catch (e){
+        console.log(e)
+        if(response) {
+            res.render('books/show', {
+                book,
+                errorMessage : "Could not remove book"
+            })
+        } else {
+            res.redirect('/')
+        }
+    }
+})
+
 async function renderNewPage(res, book, hasError=false){
+    renderFormPage(res, book, 'new', hasError)
+}
+
+async function renderEditPage(res, book, hasError=false){
+    renderFormPage(res, book, 'edit', hasError)
+}
+
+async function renderFormPage(res, book, form, hasError=false){
     try {
         const authors = await Authors.find()
         const params  = {
@@ -68,11 +152,17 @@ async function renderNewPage(res, book, hasError=false){
             book
         }
         if (hasError){
-            params.errorMessage = "Error Creating Book"
+            if(form === 'edit'){
+                params.errorMessage = "Error Editing Book"
+            } 
+            if(form === 'new'){
+                params.errorMessage = "Error Creating Book"
+            }
         }
-        res.render('books/new', params)
+        res.render(`books/${form}`, params)
     } catch (e){
-        res.redirect('books')
+        console.log(e)
+        res.redirect('/books')
     }
 }
 
